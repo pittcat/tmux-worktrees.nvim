@@ -32,6 +32,7 @@ function M.branch_input(opts)
     local ui_config = config.get("ui.input") or {}
 
     local input = Input({
+        enter = true,
         position = ui_config.position or "50%",
         size = {
             width = ui_config.width or 60,

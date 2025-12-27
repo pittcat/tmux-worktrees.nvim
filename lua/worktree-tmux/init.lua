@@ -377,14 +377,16 @@ function M.list()
         end,
         on_create = function()
             dbg.log_raw("INFO", "User selected create new worktree")
-            -- Show input to create new worktree
-            ui.branch_input({
-                prompt = " Enter new branch name ",
-                on_submit = function(branch)
-                    dbg.log_raw("INFO", string.format("User entered branch name: %s", branch))
-                    M.create(branch)
-                end,
-            })
+            -- Delay to allow fzf-lua window to close before showing nui.input
+            vim.defer_fn(function()
+                ui.branch_input({
+                    prompt = " Enter new branch name ",
+                    on_submit = function(branch)
+                        dbg.log_raw("INFO", string.format("User entered branch name: %s", branch))
+                        M.create(branch)
+                    end,
+                })
+            end, 50)
         end,
     })
 
