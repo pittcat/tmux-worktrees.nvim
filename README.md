@@ -1,81 +1,81 @@
 # worktree-tmux.nvim
 
-Git Worktree + Tmux Window 自动化管理 Neovim 插件。
+Git Worktree + Tmux Window Automation Management Neovim Plugin.
 
-在 Neovim 中创建 git worktree 时，自动在固定的 tmux session 中创建对应的 window，实现统一管理。
+Automatically create corresponding tmux windows in a dedicated tmux session when creating git worktrees in Neovim, enabling unified management.
 
-## 功能特性
+## Features
 
-- **一键创建**：创建 worktree 时自动创建对应 tmux window
-- **统一管理**：所有 worktrees 集中在固定的 `worktrees` session
-- **快速切换**：通过 fzf-lua 模糊搜索快速跳转
-- **完整同步**：自动同步所有文件（包括 .gitignore 内容）
-- **自动清理**：删除 worktree 时自动删除 tmux window
+- **One-click Create**: Automatically create tmux window when creating worktree
+- **Unified Management**: All worktrees centralized in dedicated `worktrees` session
+- **Quick Switch**: Fast jump via fzf-lua fuzzy search
+- **Complete Sync**: Automatically sync all files (including .gitignore content)
+- **Auto Cleanup**: Automatically delete tmux window when deleting worktree
 
-## 安装
+## Installation
 
 ### lazy.nvim
 
 ```lua
 {
-  "yourusername/worktree-tmux.nvim",
+  "pittcat/worktree-tmux.nvim",
   dependencies = {
-    "nvim-lua/plenary.nvim",   -- 必选：异步执行
-    "MunifTanjim/nui.nvim",    -- 必选：UI 组件
-    "ibhagwan/fzf-lua",        -- 可选：模糊搜索
-    "folke/snacks.nvim",       -- 可选：通知系统
+    "nvim-lua/plenary.nvim",   -- Required: async execution
+    "MunifTanjim/nui.nvim",    -- Required: UI components
+    "ibhagwan/fzf-lua",        -- Optional: fuzzy search
+    "folke/snacks.nvim",       -- Optional: notification system
   },
   config = function()
     require("worktree-tmux").setup({
-      -- 配置选项
+      -- Configuration options
     })
   end,
   keys = {
-    { "<leader>wc", "<cmd>WorktreeCreate<cr>", desc = "创建 Worktree" },
-    { "<leader>wj", "<cmd>WorktreeJump<cr>", desc = "跳转 Worktree" },
-    { "<leader>wd", "<cmd>WorktreeDelete<cr>", desc = "删除 Worktree" },
-    { "<leader>ws", "<cmd>WorktreeSync<cr>", desc = "同步 Worktrees" },
-    { "<leader>wl", "<cmd>WorktreeList<cr>", desc = "列出 Worktrees" },
+    { "<leader>wc", "<cmd>WorktreeCreate<cr>", desc = "Create Worktree" },
+    { "<leader>wj", "<cmd>WorktreeJump<cr>", desc = "Jump to Worktree" },
+    { "<leader>wd", "<cmd>WorktreeDelete<cr>", desc = "Delete Worktree" },
+    { "<leader>ws", "<cmd>WorktreeSync<cr>", desc = "Sync Worktrees" },
+    { "<leader>wl", "<cmd>WorktreeList<cr>", desc = "List Worktrees" },
   },
 }
 ```
 
-## 命令
+## Commands
 
-| 命令 | 描述 |
-|------|------|
-| `:WorktreeCreate [branch] [base]` | 创建 worktree 并打开 tmux window |
-| `:WorktreeJump` | 使用 fzf-lua 选择并跳转到 worktree |
-| `:WorktreeDelete [path]` | 删除 worktree 及对应 tmux window |
-| `:WorktreeSync` | 同步 worktrees 和 windows 状态 |
-| `:WorktreeList` | 列出所有 worktrees |
+| Command | Description |
+|---------|-------------|
+| `:WorktreeCreate [branch] [base]` | Create worktree and open tmux window |
+| `:WorktreeJump` | Use fzf-lua to select and jump to worktree |
+| `:WorktreeDelete [path]` | Delete worktree and corresponding tmux window |
+| `:WorktreeSync` | Sync worktrees and windows status |
+| `:WorktreeList` | List all worktrees |
 
-## 配置
+## Configuration
 
 ```lua
 require("worktree-tmux").setup({
-  -- Tmux session 名称
+  -- Tmux session name
   session_name = "worktrees",
 
-  -- Worktree 基础目录
+  -- Worktree base directory
   worktree_base_dir = "~/worktrees",
 
-  -- Window 启动命令（nil = 空 shell）
+  -- Window startup command (nil = empty shell)
   window_command = nil,
 
-  -- Window 命名模板
+  -- Window name template
   window_name_template = "wt-{repo}-{branch}",
 
-  -- 是否同步 .gitignore 文件
+  -- Whether to sync .gitignore files
   sync_ignored_files = true,
 
-  -- 重名 window 处理："ask" | "overwrite" | "skip"
+  -- Duplicate window handling: "ask" | "overwrite" | "skip"
   on_duplicate_window = "ask",
 
-  -- 是否异步执行（后台运行，不阻塞当前 Neovim 操作）
+  -- Whether to execute asynchronously (run in background, doesn't block Neovim)
   async = true,
 
-  -- UI 配置
+  -- UI configuration
   ui = {
     input = {
       border = "rounded",
@@ -87,7 +87,7 @@ require("worktree-tmux").setup({
     },
   },
 
-  -- fzf-lua 配置
+  -- fzf-lua configuration
   fzf_opts = {
     prompt = "Worktree Jump> ",
     winopts = {
@@ -96,38 +96,38 @@ require("worktree-tmux").setup({
     },
   },
 
-  -- 日志配置
+  -- Log configuration
   log = {
     level = "info",  -- trace, debug, info, warn, error
-    use_console = true,
+    use_console = false,
     use_file = true,
   },
 })
 ```
 
-## 健康检查
+## Health Check
 
 ```vim
 :checkhealth worktree-tmux
 ```
 
-## 依赖
+## Dependencies
 
-### 必选
+### Required
 
-- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) - 异步执行
-- [nui.nvim](https://github.com/MunifTanjim/nui.nvim) - UI 组件
+- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) - Async execution
+- [nui.nvim](https://github.com/MunifTanjim/nui.nvim) - UI components
 
-### 可选
+### Optional
 
-- [fzf-lua](https://github.com/ibhagwan/fzf-lua) - 模糊搜索（推荐）
-- [snacks.nvim](https://github.com/folke/snacks.nvim) - 通知系统
+- [fzf-lua](https://github.com/ibhagwan/fzf-lua) - Fuzzy search (recommended)
+- [snacks.nvim](https://github.com/folke/snacks.nvim) - Notification system
 
-### 系统依赖
+### System Dependencies
 
-- `tmux` - Tmux 终端复用器
-- `git` - Git 版本控制
-- `rsync` - 文件同步（用于同步 .gitignore 文件）
+- `tmux` - Tmux terminal multiplexer
+- `git` - Git version control
+- `rsync` - File sync (for syncing .gitignore files)
 
 ## License
 

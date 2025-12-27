@@ -1,20 +1,20 @@
--- 异步执行模块
--- 基于 plenary.job 封装异步操作
+-- Async execution module
+-- Async operations wrapper based on plenary.job
 
 local log = require("worktree-tmux.log")
 
 local M = {}
 
--- 检查 plenary 是否可用
+-- Check if plenary is available
 local has_plenary, Job = pcall(require, "plenary.job")
 
---- 异步执行命令
+--- Execute command asynchronously
 ---@param opts { cmd: string, args?: string[], cwd?: string, on_success?: fun(result: string[]), on_error?: fun(stderr: string[], code: number), on_progress?: fun(data: string) }
 ---@return table|nil job
 function M.run(opts)
     if not has_plenary then
-        log.error("plenary.nvim 未安装，无法使用异步功能")
-        -- 回退到同步执行
+        log.error("plenary.nvim not installed, async feature unavailable")
+        -- Fallback to sync execution
         local cmd = opts.cmd
         if opts.args then
             cmd = cmd .. " " .. table.concat(opts.args, " ")
@@ -61,7 +61,7 @@ function M.run(opts)
                     if opts.on_error then
                         opts.on_error(j:stderr_result(), return_val)
                     else
-                        log.error("命令执行失败:", opts.cmd, "返回码:", return_val)
+                        log.error("Command failed:", opts.cmd, "exit code:", return_val)
                     end
                 end
             end)
@@ -72,8 +72,8 @@ function M.run(opts)
     return job
 end
 
---- 异步执行 git 命令
----@param args string[] git 命令参数
+--- Execute git command asynchronously
+---@param args string[] git command arguments
 ---@param callbacks { on_success?: fun(result: string[]), on_error?: fun(stderr: string[], code: number) }
 ---@return table|nil job
 function M.git(args, callbacks)
@@ -85,8 +85,8 @@ function M.git(args, callbacks)
     })
 end
 
---- 异步执行 tmux 命令
----@param args string[] tmux 命令参数
+--- Execute tmux command asynchronously
+---@param args string[] tmux command arguments
 ---@param callbacks { on_success?: fun(result: string[]), on_error?: fun(stderr: string[], code: number) }
 ---@return table|nil job
 function M.tmux(args, callbacks)
@@ -98,9 +98,9 @@ function M.tmux(args, callbacks)
     })
 end
 
---- 异步执行 rsync 命令
----@param source string 源路径
----@param target string 目标路径
+--- Execute rsync command asynchronously
+---@param source string source path
+---@param target string target path
 ---@param callbacks { on_success?: fun(result: string[]), on_error?: fun(stderr: string[], code: number), on_progress?: fun(data: string) }
 ---@return table|nil job
 function M.rsync(source, target, callbacks)
@@ -113,9 +113,9 @@ function M.rsync(source, target, callbacks)
     })
 end
 
---- 等待 job 完成（同步阻塞）
+--- Wait for job completion (sync blocking)
 ---@param job table plenary.job
----@param timeout? number 超时时间（毫秒）
+---@param timeout? number Timeout in milliseconds
 ---@return boolean completed
 function M.wait(job, timeout)
     if not job then
@@ -131,7 +131,7 @@ function M.wait(job, timeout)
     return result ~= nil
 end
 
---- 创建 Promise 风格的异步操作
+--- Create Promise-style async operation
 ---@param opts { cmd: string, args?: string[], cwd?: string }
 ---@return table promise { then_: fun(on_success: fun(result: string[])), catch: fun(on_error: fun(err: string)), await: fun(): string[] }
 function M.promise(opts)
@@ -194,7 +194,7 @@ function M.promise(opts)
     return promise
 end
 
---- 并行执行多个命令
+--- Execute multiple commands in parallel
 ---@param commands { cmd: string, args?: string[] }[]
 ---@param callback fun(results: { success: boolean, result?: string[], error?: string }[])
 function M.parallel(commands, callback)
@@ -224,7 +224,7 @@ function M.parallel(commands, callback)
     end
 end
 
---- 检查 plenary 是否可用
+--- Check if plenary is available
 ---@return boolean
 function M.is_available()
     return has_plenary

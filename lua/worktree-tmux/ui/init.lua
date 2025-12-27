@@ -1,15 +1,15 @@
--- UI 模块入口
--- 统一导出 UI 功能
+-- UI module entry point
+-- Unified export of UI functionality
 
 local M = {}
 
--- 懒加载子模块
+-- Lazy load submodules
 local _input = nil
 local _confirm = nil
 local _picker = nil
 local _progress = nil
 
---- 获取输入框模块
+--- Get input module
 ---@return table
 function M.get_input()
     if not _input then
@@ -18,7 +18,7 @@ function M.get_input()
     return _input
 end
 
---- 获取确认对话框模块
+--- Get confirm dialog module
 ---@return table
 function M.get_confirm()
     if not _confirm then
@@ -27,7 +27,7 @@ function M.get_confirm()
     return _confirm
 end
 
---- 获取选择器模块
+--- Get picker module
 ---@return table
 function M.get_picker()
     if not _picker then
@@ -36,7 +36,7 @@ function M.get_picker()
     return _picker
 end
 
---- 获取进度模块
+--- Get progress module
 ---@return table
 function M.get_progress()
     if not _progress then
@@ -45,31 +45,31 @@ function M.get_progress()
     return _progress
 end
 
---- 显示分支名输入框
+--- Show branch name input
 ---@param opts { prompt?: string, default?: string, on_submit: fun(value: string), on_close?: fun() }
 function M.branch_input(opts)
     M.get_input().branch_input(opts)
 end
 
---- 显示确认对话框
+--- Show confirm dialog
 ---@param opts { title?: string, message: string, on_yes: fun(), on_no?: fun() }
 function M.confirm(opts)
     M.get_confirm().show(opts)
 end
 
---- 显示 worktree 选择器
+--- Show worktree picker
 ---@param opts? { on_select?: fun(item: table) }
 function M.worktree_picker(opts)
     M.get_picker().show_worktree_picker(opts)
 end
 
---- 显示进度
+--- Show progress
 ---@param opts { message: string, progress?: number, total?: number }
 function M.show_progress(opts)
     M.get_progress().show(opts)
 end
 
---- 隐藏进度
+--- Hide progress
 function M.hide_progress()
     M.get_progress().hide()
 end

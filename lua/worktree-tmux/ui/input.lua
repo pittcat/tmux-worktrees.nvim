@@ -1,23 +1,23 @@
--- nui.nvim 输入框组件
+-- nui.nvim input component
 
 local config = require("worktree-tmux.config")
 
 local M = {}
 
--- 检查 nui.nvim 是否可用
+-- Check if nui.nvim is available
 local has_nui, Input = pcall(require, "nui.input")
 local has_event, event = pcall(require, "nui.utils.autocmd")
 if has_event then
     event = event.event
 end
 
---- 显示分支名输入框
+--- Show branch name input
 ---@param opts { prompt?: string, default?: string, on_submit: fun(value: string), on_close?: fun() }
 function M.branch_input(opts)
     if not has_nui then
-        -- 回退到 vim.ui.input
+        -- Fallback to vim.ui.input
         vim.ui.input({
-            prompt = opts.prompt or "输入分支名: ",
+            prompt = opts.prompt or "Enter branch name: ",
             default = opts.default or "",
         }, function(value)
             if value and value ~= "" then
@@ -42,7 +42,7 @@ function M.branch_input(opts)
         border = {
             style = ui_config.border or "rounded",
             text = {
-                top = opts.prompt or " 输入分支名 ",
+                top = opts.prompt or " Enter Branch Name ",
                 top_align = "center",
             },
         },
@@ -64,20 +64,20 @@ function M.branch_input(opts)
         end,
     })
 
-    -- 挂载并设置快捷键
+    -- Mount and set shortcuts
     input:mount()
 
-    -- ESC 关闭
+    -- ESC to close
     input:map("n", "<Esc>", function()
         input:unmount()
     end, { noremap = true })
 
-    -- Ctrl-C 关闭
+    -- Ctrl-C to close
     input:map("i", "<C-c>", function()
         input:unmount()
     end, { noremap = true })
 
-    -- 自动关闭
+    -- Auto close
     if has_event then
         input:on(event.BufLeave, function()
             input:unmount()
@@ -85,13 +85,13 @@ function M.branch_input(opts)
     end
 end
 
---- 显示基础分支选择输入框
+--- Show base branch selection input
 ---@param opts { prompt?: string, branches: string[], on_submit: fun(value: string), on_close?: fun() }
 function M.base_branch_input(opts)
     if not has_nui then
-        -- 回退到 vim.ui.select
+        -- Fallback to vim.ui.select
         vim.ui.select(opts.branches, {
-            prompt = opts.prompt or "选择基础分支:",
+            prompt = opts.prompt or "Select base branch:",
         }, function(choice)
             if choice then
                 opts.on_submit(choice)
@@ -102,12 +102,12 @@ function M.base_branch_input(opts)
         return
     end
 
-    -- 使用 nui.menu 实现
+    -- Use nui.menu implementation
     local has_menu, Menu = pcall(require, "nui.menu")
     if not has_menu then
-        -- 回退
+        -- Fallback
         vim.ui.select(opts.branches, {
-            prompt = opts.prompt or "选择基础分支:",
+            prompt = opts.prompt or "Select base branch:",
         }, function(choice)
             if choice then
                 opts.on_submit(choice)
@@ -136,7 +136,7 @@ function M.base_branch_input(opts)
         border = {
             style = ui_config.border or "rounded",
             text = {
-                top = opts.prompt or " 选择基础分支 ",
+                top = opts.prompt or " Select Base Branch ",
                 top_align = "center",
             },
         },

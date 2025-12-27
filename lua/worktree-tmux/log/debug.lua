@@ -1,13 +1,13 @@
--- 第三层：高级调试工具
--- 提供调用栈追踪、数据流追踪、上下文管理、函数装饰器
+-- Layer 3: Advanced debugging tools
+-- Provides call stack tracing, data flow tracing, context management, function decorators
 
 local log = require("worktree-tmux.log.logger")
 
 local M = {}
 
---- 安全地格式化数据用于日志输出
----@param data any 要格式化的数据
----@param max_length? number 最大长度（默认200）
+--- Safely format data for log output
+---@param data any Data to format
+---@param max_length? number Max length (default 200)
 ---@return string
 local function safe_inspect(data, max_length)
     max_length = max_length or 200
@@ -18,26 +18,26 @@ local function safe_inspect(data, max_length)
     local inspected = vim.inspect(data, {
         newline = "",
         indent = "",
-        depth = 3,  -- 限制深度避免过深嵌套
+        depth = 3,  -- Limit depth to avoid deep nesting
     })
 
-    -- 限制长度
+    -- Limit length
     if #inspected > max_length then
-        inspected = inspected:sub(1, max_length) .. "... (截断)"
+        inspected = inspected:sub(1, max_length) .. "... (truncated)"
     end
 
-    -- 转义引号避免 echomsg 错误
+    -- Escape quotes to avoid echomsg errors
     inspected = inspected:gsub('"', "'")
 
     return inspected
 end
 
--- 调试上下文管理
+-- Debug context management
 local debug_contexts = {}
 local current_context = nil
 local request_id_counter = 0
 
---- 生成请求 ID
+--- Generate request ID
 ---@return string
 local function generate_request_id()
     request_id_counter = request_id_counter + 1
@@ -48,8 +48,8 @@ local function generate_request_id()
     )
 end
 
---- 获取调用栈信息
----@param depth number 调用深度
+--- Get call stack info
+---@param depth number Call depth
 ---@return string
 local function get_call_stack(depth)
     local stack = {}
@@ -65,7 +65,7 @@ local function get_call_stack(depth)
     return table.concat(stack, " → ")
 end
 
---- 获取毫秒级时间戳
+--- Get millisecond timestamp
 ---@return string
 local function get_timestamp()
     local time = vim.loop.hrtime() / 1e6
@@ -73,8 +73,8 @@ local function get_timestamp()
     return os.date("%Y-%m-%d %H:%M:%S") .. string.format(".%03d", ms)
 end
 
---- 开始调试上下文
----@param context string 上下文名称
+--- Start debug context
+---@param context string Context name
 ---@return string request_id
 function M.begin(context)
     local request_id = generate_request_id()
@@ -86,12 +86,12 @@ function M.begin(context)
         data_flow = {},
     }
 
-    M.log_raw("START", string.format("========== %s 开始 ==========", context))
+    M.log_raw("START", string.format("========== %s begins ==========", context))
 
-    -- 记录环境信息
+    -- Record environment info
     local version = vim.version()
     M.log_raw("INFO", string.format(
-        "环境: %s | 版本: %s | Neovim: %s.%s.%s",
+        "Env: %s | Version: %s | Neovim: %s.%s.%s",
         vim.env.WORKTREE_ENV or "dev",
         "v0.1.0",
         version.major,
@@ -102,7 +102,7 @@ function M.begin(context)
     return request_id
 end
 
---- 结束调试上下文
+--- End debug context
 function M.done()
     if not current_context then
         log.warn("No active debug context")
@@ -113,7 +113,7 @@ function M.done()
     if ctx then
         local duration = (vim.loop.hrtime() - ctx.start_time) / 1e6
         M.log_raw("END", string.format(
-            "========== %s 完成 | 总耗时: %.0fms ==========",
+            "========== %s completed | total time: %.0fms ==========",
             current_context,
             duration
         ))
@@ -122,9 +122,9 @@ function M.done()
     current_context = nil
 end
 
---- 原始日志记录（带完整格式）
----@param level string 日志级别
----@param msg string 消息
+--- Raw log (with full format)
+---@param level string Log level
+---@param msg string Message
 function M.log_raw(level, msg)
     local ctx = current_context and debug_contexts[current_context]
     local request_id = ctx and ctx.request_id or ""
@@ -138,18 +138,18 @@ function M.log_raw(level, msg)
         msg
     )
 
-    -- 输出到控制台和文件
+    -- Output to console and file
     log.info(formatted)
 
-    -- 记录到上下文
+    -- Record to context
     if ctx then
         table.insert(ctx.logs, formatted)
     end
 end
 
---- 记录调用栈
----@param fn_name string 函数名
----@param ... any 参数
+--- Record function call
+---@param fn_name string Function name
+---@param ... any Arguments
 function M.fn_call(fn_name, ...)
     local args = { ... }
     local args_str = {}
@@ -164,15 +164,15 @@ function M.fn_call(fn_name, ...)
 
     local call_stack = get_call_stack(3)
     M.log_raw("DEBUG", string.format(
-        "调用栈: %s | 参数: %s",
+        "Call stack: %s | Args: %s",
         call_stack,
         table.concat(args_str, ", ")
     ))
 end
 
---- 记录函数返回
----@param fn_name string 函数名
----@param ... any 返回值
+--- Record function return
+---@param fn_name string Function name
+---@param ... any Return values
 function M.fn_return(fn_name, ...)
     local returns = { ... }
     local ret_str = {}
@@ -186,39 +186,39 @@ function M.fn_return(fn_name, ...)
     end
 
     M.log_raw("DEBUG", string.format(
-        "返回: %s() → %s",
+        "Return: %s() → %s",
         fn_name,
         table.concat(ret_str, ", ")
     ))
 end
 
---- 记录数据流
----@param input any 输入数据
----@param output any 输出数据
----@param operation string 操作描述
+--- Record data flow
+---@param input any Input data
+---@param output any Output data
+---@param operation string Operation description
 function M.data_flow(input, output, operation)
     local input_str
     if type(input) == "table" then
-        input_str = string.format("%d 条记录", #input)
+        input_str = string.format("%d records", #input)
     else
         input_str = tostring(input)
     end
 
     local output_str
     if type(output) == "table" then
-        output_str = string.format("%d 条记录", #output)
+        output_str = string.format("%d records", #output)
     else
         output_str = tostring(output)
     end
 
     M.log_raw("DEBUG", string.format(
-        "数据流: 输入 %s → %s → 输出 %s",
+        "Data flow: input %s → %s → output %s",
         input_str,
         operation,
         output_str
     ))
 
-    -- 记录到上下文
+    -- Record to context
     local ctx = current_context and debug_contexts[current_context]
     if ctx then
         table.insert(ctx.data_flow, {
@@ -230,20 +230,20 @@ function M.data_flow(input, output, operation)
     end
 end
 
---- 检查点
----@param name string 检查点名称
----@param data? table 额外数据
+--- Checkpoint
+---@param name string Checkpoint name
+---@param data? table Extra data
 function M.checkpoint(name, data)
     if data then
-        M.log_raw("INFO", string.format("✓ 检查点: %s | 数据: %s", name, safe_inspect(data)))
+        M.log_raw("INFO", string.format("✓ Checkpoint: %s | Data: %s", name, safe_inspect(data)))
     else
-        M.log_raw("INFO", string.format("✓ 检查点: %s", name))
+        M.log_raw("INFO", string.format("✓ Checkpoint: %s", name))
     end
 end
 
---- 函数装饰器：自动记录调用和返回
----@param fn function 要装饰的函数
----@param name string 函数名称
+--- Function decorator: auto record call and return
+---@param fn function Function to decorate
+---@param name string Function name
 ---@return function
 function M.wrap(fn, name)
     return function(...)
@@ -252,14 +252,14 @@ function M.wrap(fn, name)
         local results = { fn(...) }
         local duration = (vim.loop.hrtime() - start) / 1e6
         M.fn_return(name, unpack(results))
-        M.log_raw("DEBUG", string.format("%s() 耗时: %.2fms", name, duration))
+        M.log_raw("DEBUG", string.format("%s() duration: %.2fms", name, duration))
         return unpack(results)
     end
 end
 
---- 带作用域的调试
----@param context string 上下文名称
----@param fn function 要执行的函数
+--- Scoped debugging
+---@param context string Context name
+---@param fn function Function to execute
 ---@return any
 function M.scope(context, fn)
     M.begin(context)
@@ -267,15 +267,15 @@ function M.scope(context, fn)
     M.done()
 
     if not ok then
-        M.log_raw("ERROR", string.format("作用域 '%s' 出错: %s", context, result))
+        M.log_raw("ERROR", string.format("Scope '%s' error: %s", context, result))
         error(result)
     end
 
     return result
 end
 
---- 获取调试报告
----@param context? string 上下文名称
+--- Get debug report
+---@param context? string Context name
 ---@return table
 function M.report(context)
     if context then
@@ -284,14 +284,14 @@ function M.report(context)
     return debug_contexts
 end
 
---- 清空调试上下文
+--- Clear debug contexts
 function M.clear()
     debug_contexts = {}
     current_context = nil
     request_id_counter = 0
 end
 
--- 导出快捷方法
+-- Export shortcut methods
 function M.trace(msg, data)
     log.trace(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end

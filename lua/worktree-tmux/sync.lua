@@ -1,11 +1,11 @@
--- 文件同步模块
--- 负责同步 .gitignore 中的文件到新 worktree
+-- File sync module
+-- Syncs .gitignore patterns to new worktrees
 
 local log = require("worktree-tmux.log")
 
 local M = {}
 
---- 解析 .gitignore 文件
+-- Parse .gitignore file
 ---@param gitignore_path string
 ---@return string[] patterns
 function M.parse_gitignore(gitignore_path)
@@ -20,10 +20,10 @@ function M.parse_gitignore(gitignore_path)
     end
 
     for line in file:lines() do
-        -- 忽略空行和注释
+        -- Skip empty lines and comments
         line = line:gsub("^%s+", ""):gsub("%s+$", "") -- trim
         if line ~= "" and not line:match("^#") then
-            -- 忽略否定模式（以 ! 开头）
+            -- Skip negation patterns (starting with !)
             if not line:match("^!") then
                 table.insert(patterns, line)
             end
@@ -34,7 +34,7 @@ function M.parse_gitignore(gitignore_path)
     return patterns
 end
 
---- 检查路径是否存在
+-- Check path exists
 ---@param path string
 ---@return boolean is_dir
 ---@return boolean exists
@@ -46,19 +46,19 @@ local function check_path(path)
     return stat.type == "directory", true
 end
 
---- 同步单个 pattern 对应的文件/目录
----@param source_base string 源目录
----@param target_base string 目标目录
+-- Sync single pattern
+---@param source_base string source directory
+---@param target_base string target directory
 ---@param pattern string gitignore pattern
 ---@return boolean success
 ---@return string? error_msg
 local function sync_pattern(source_base, target_base, pattern)
-    -- 处理 pattern（移除开头的 /）
+    -- Handle pattern (remove leading /)
     local clean_pattern = pattern:gsub("^/", "")
 
-    -- 处理通配符目录（如 **/node_modules）
+    -- Handle wildcard directories (e.g., **/node_modules)
     if clean_pattern:match("^%*%*/") then
-        -- 使用 find 查找所有匹配的目录/文件
+        -- Use find to find all matching dirs/files
         local search_pattern = clean_pattern:gsub("^%*%*/", "")
         local cmd = string.format(
             "find %s -name %s -type d 2>/dev/null",
@@ -69,15 +69,15 @@ local function sync_pattern(source_base, target_base, pattern)
 
         if vim.v.shell_error == 0 then
             for source_path in output:gmatch("[^\r\n]+") do
-                -- 计算相对路径
+                -- Calculate relative path
                 local relative = source_path:sub(#source_base + 2)
                 local target_path = target_base .. "/" .. relative
 
-                -- 确保父目录存在
+                -- Ensure parent dir exists
                 local parent = vim.fn.fnamemodify(target_path, ":h")
                 vim.fn.mkdir(parent, "p")
 
-                -- 使用 rsync 同步
+                -- Use rsync to sync
                 local rsync_cmd = string.format(
                     "rsync -a --exclude='.git' %s/ %s/",
                     vim.fn.shellescape(source_path),
@@ -86,40 +86,40 @@ local function sync_pattern(source_base, target_base, pattern)
                 vim.fn.system(rsync_cmd)
 
                 if vim.v.shell_error ~= 0 then
-                    log.warn("同步失败:", relative)
+                    log.warn("Sync failed:", relative)
                 else
-                    log.debug("同步成功:", relative)
+                    log.debug("Sync success:", relative)
                 end
             end
         end
         return true
     end
 
-    -- 处理普通 pattern
+    -- Handle normal pattern
     local source_path = source_base .. "/" .. clean_pattern
     local target_path = target_base .. "/" .. clean_pattern
 
     local is_dir, exists = check_path(source_path)
     if not exists then
-        log.debug("源不存在，跳过:", clean_pattern)
+        log.debug("Source not exists, skip:", clean_pattern)
         return true
     end
 
-    -- 确保父目录存在
+    -- Ensure parent dir exists
     local parent = vim.fn.fnamemodify(target_path, ":h")
     vim.fn.mkdir(parent, "p")
 
-    -- 构建 rsync 命令
+    -- Build rsync command
     local rsync_cmd
     if is_dir then
-        -- 目录同步
+        -- Directory sync
         rsync_cmd = string.format(
             "rsync -a --exclude='.git' %s/ %s/",
             vim.fn.shellescape(source_path),
             vim.fn.shellescape(target_path)
         )
     else
-        -- 文件同步
+        -- File sync
         rsync_cmd = string.format(
             "rsync -a %s %s",
             vim.fn.shellescape(source_path),
@@ -127,7 +127,7 @@ local function sync_pattern(source_base, target_base, pattern)
         )
     end
 
-    log.debug("执行 rsync:", rsync_cmd)
+    log.debug("Execute rsync:", rsync_cmd)
     local output = vim.fn.system(rsync_cmd)
 
     if vim.v.shell_error ~= 0 then
@@ -137,14 +137,14 @@ local function sync_pattern(source_base, target_base, pattern)
     return true
 end
 
---- 同步 ignored 文件到新 worktree（异步版本）
----@param source string 源目录（当前仓库）
----@param target string 目标目录（新 worktree）
+-- Sync ignored files to new worktree (async version)
+---@param source string source directory (current repo)
+---@param target string target directory (new worktree)
 ---@param opts? { patterns?: string[], on_progress?: fun(pattern: string, current: number, total: number), on_sync_done?: fun(sync_ok: boolean, synced_count: number) }
 function M.sync_ignored_files_async(source, target, opts)
     opts = opts or {}
 
-    -- 获取 patterns
+    -- Get patterns
     local patterns = opts.patterns
     if not patterns then
         local gitignore_path = source .. "/.gitignore"
@@ -152,14 +152,14 @@ function M.sync_ignored_files_async(source, target, opts)
     end
 
     if #patterns == 0 then
-        log.info("没有需要同步的文件")
+        log.info("No files to sync")
         if opts.on_sync_done then
             opts.on_sync_done(true, 0)
         end
         return
     end
 
-    log.info("开始同步 ignore 文件，共", #patterns, "个 patterns")
+    log.info("Start syncing ignore files, total", #patterns, "patterns")
 
     local synced = 0
     local failed = 0
@@ -168,12 +168,12 @@ function M.sync_ignored_files_async(source, target, opts)
 
     local function process_next(index)
         if index > #patterns then
-            -- 全部完成
+            -- All done
             local success = failed == 0
             if failed > 0 then
-                log.warn("同步完成，成功:", synced, "失败:", failed)
+                log.warn("Sync complete, success:", synced, "failed:", failed)
             else
-                log.info("同步完成，共", synced, "个 patterns")
+                log.info("Sync complete, total", synced, "patterns")
             end
             if opts.on_sync_done then
                 opts.on_sync_done(success, synced)
@@ -192,12 +192,12 @@ function M.sync_ignored_files_async(source, target, opts)
 
         local stat = vim.loop.fs_stat(source_path)
         if not stat then
-            -- 源不存在，跳过
+            -- Source not exists, skip
             process_next(index + 1)
             return
         end
 
-        -- 构建 rsync 命令
+        -- Build rsync command
         local is_dir = stat.type == "directory"
         local rsync_cmd
         if is_dir then
@@ -214,9 +214,9 @@ function M.sync_ignored_files_async(source, target, opts)
             )
         end
 
-        log.debug("执行 rsync:", rsync_cmd)
+        log.debug("Execute rsync:", rsync_cmd)
 
-        -- 异步执行 rsync
+        -- Execute rsync async
         async.run({
             cmd = "sh",
             args = { "-c", rsync_cmd },
@@ -226,7 +226,7 @@ function M.sync_ignored_files_async(source, target, opts)
             end,
             on_error = function()
                 failed = failed + 1
-                log.warn("同步失败:", pattern)
+                log.warn("Sync failed:", pattern)
                 process_next(index + 1)
             end,
         })
@@ -235,16 +235,16 @@ function M.sync_ignored_files_async(source, target, opts)
     process_next(1)
 end
 
---- 同步 ignored 文件到新 worktree（同步版本，保留兼容性）
----@param source string 源目录（当前仓库）
----@param target string 目标目录（新 worktree）
+-- Sync ignored files to new worktree (sync version, kept for compatibility)
+---@param source string source directory (current repo)
+---@param target string target directory (new worktree)
 ---@param opts? { patterns?: string[], on_progress?: fun(pattern: string, current: number, total: number), on_sync_done?: fun(sync_ok: boolean, synced_count: number) }
 ---@return boolean success
 ---@return number synced_count
 function M.sync_ignored_files(source, target, opts)
     opts = opts or {}
 
-    -- 获取 patterns
+    -- Get patterns
     local patterns = opts.patterns
     if not patterns then
         local gitignore_path = source .. "/.gitignore"
@@ -252,14 +252,14 @@ function M.sync_ignored_files(source, target, opts)
     end
 
     if #patterns == 0 then
-        log.info("没有需要同步的文件")
+        log.info("No files to sync")
         if opts.on_sync_done then
             opts.on_sync_done(true, 0)
         end
         return true, 0
     end
 
-    log.info("开始同步 ignore 文件，共", #patterns, "个 patterns")
+    log.info("Start syncing ignore files, total", #patterns, "patterns")
 
     local synced = 0
     local failed = 0
@@ -274,14 +274,14 @@ function M.sync_ignored_files(source, target, opts)
             synced = synced + 1
         else
             failed = failed + 1
-            log.warn("同步失败:", pattern, err or "")
+            log.warn("Sync failed:", pattern, err or "")
         end
     end
 
     if failed > 0 then
-        log.warn("同步完成，成功:", synced, "失败:", failed)
+        log.warn("Sync complete, success:", synced, "failed:", failed)
     else
-        log.info("同步完成，共", synced, "个 patterns")
+        log.info("Sync complete, total", synced, "patterns")
     end
 
     if opts.on_sync_done then
@@ -291,9 +291,9 @@ function M.sync_ignored_files(source, target, opts)
     return failed == 0, synced
 end
 
---- 获取需要同步的文件列表（用于预览）
----@param source string 源目录
----@return table[] 文件列表 { pattern, path, type, size }
+-- Get file list to sync (for preview)
+---@param source string source directory
+---@return table[] file list { pattern, path, type, size }
 function M.get_sync_preview(source)
     local gitignore_path = source .. "/.gitignore"
     local patterns = M.parse_gitignore(gitignore_path)
@@ -317,8 +317,8 @@ function M.get_sync_preview(source)
     return files
 end
 
---- 计算同步所需的磁盘空间（估算）
----@param source string 源目录
+-- Calculate disk space needed for sync (estimate)
+---@param source string source directory
 ---@return number bytes
 function M.estimate_sync_size(source)
     local files = M.get_sync_preview(source)
@@ -326,7 +326,7 @@ function M.estimate_sync_size(source)
 
     for _, file in ipairs(files) do
         if file.type == "directory" then
-            -- 使用 du 估算目录大小
+            -- Use du to estimate dir size
             local cmd = string.format("du -sb %s 2>/dev/null | cut -f1", vim.fn.shellescape(file.path))
             local output = vim.fn.system(cmd)
             local size = tonumber(output) or 0

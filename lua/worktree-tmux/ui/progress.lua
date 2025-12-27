@@ -1,22 +1,22 @@
--- 进度展示组件
+-- Progress display component
 
 local config = require("worktree-tmux.config")
 
 local M = {}
 
--- 当前进度窗口
+-- Current progress window
 local progress_win = nil
 local progress_buf = nil
 
---- 显示进度
+--- Show progress
 ---@param opts { message: string, progress?: number, total?: number }
 function M.show(opts)
     local notify_config = config.get("notify") or {}
 
-    -- 检查 snacks.nvim 是否可用
+    -- Check if snacks.nvim is available
     local has_snacks, snacks = pcall(require, "snacks")
     if has_snacks and snacks.notify and notify_config.use_snacks ~= false then
-        -- 使用 snacks.nvim 的进度通知
+        -- Use snacks.nvim progress notification
         local progress_str = ""
         if opts.progress and opts.total then
             progress_str = string.format(" (%d/%d)", opts.progress, opts.total)
@@ -30,14 +30,14 @@ function M.show(opts)
         return
     end
 
-    -- 使用浮动窗口显示进度
+    -- Use float window to show progress
     if progress_win and vim.api.nvim_win_is_valid(progress_win) then
-        -- 更新现有窗口
+        -- Update existing window
         M.update(opts)
         return
     end
 
-    -- 创建新的进度窗口
+    -- Create new progress window
     progress_buf = vim.api.nvim_create_buf(false, true)
 
     local width = 50
@@ -51,14 +51,14 @@ function M.show(opts)
         row = (vim.o.lines - height) / 2 - 5,
         style = "minimal",
         border = "rounded",
-        title = " ⏳ 进度 ",
+        title = " ⏳ Progress ",
         title_pos = "center",
     })
 
     M.update(opts)
 end
 
---- 更新进度
+--- Update progress
 ---@param opts { message: string, progress?: number, total?: number }
 function M.update(opts)
     if not progress_buf or not vim.api.nvim_buf_is_valid(progress_buf) then
@@ -67,10 +67,10 @@ function M.update(opts)
 
     local lines = {}
 
-    -- 消息行
+    -- Message line
     table.insert(lines, " " .. opts.message)
 
-    -- 进度条行
+    -- Progress bar line
     if opts.progress and opts.total then
         local ratio = opts.progress / opts.total
         local bar_width = 40
@@ -90,7 +90,7 @@ function M.update(opts)
     vim.api.nvim_buf_set_lines(progress_buf, 0, -1, false, lines)
 end
 
---- 隐藏进度
+--- Hide progress
 function M.hide()
     if progress_win and vim.api.nvim_win_is_valid(progress_win) then
         vim.api.nvim_win_close(progress_win, true)
@@ -103,7 +103,7 @@ function M.hide()
     end
 end
 
---- 带进度的异步操作
+--- Async operation with progress
 ---@param opts { message: string, total: number, operation: fun(progress_callback: fun(current: number, message?: string), done_callback: fun(success: boolean, result?: any)) }
 function M.with_progress(opts)
     local current = 0
@@ -126,9 +126,9 @@ function M.with_progress(opts)
     local function done_callback(success, result)
         M.hide()
         if success then
-            vim.notify("✅ " .. opts.message .. " 完成", vim.log.levels.INFO)
+            vim.notify("✅ " .. opts.message .. " done", vim.log.levels.INFO)
         else
-            vim.notify("❌ " .. opts.message .. " 失败: " .. (result or ""), vim.log.levels.ERROR)
+            vim.notify("❌ " .. opts.message .. " failed: " .. (result or ""), vim.log.levels.ERROR)
         end
     end
 

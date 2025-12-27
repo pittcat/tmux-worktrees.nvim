@@ -1,76 +1,76 @@
--- LuaCATS 类型定义
--- 提供 IDE 智能补全和类型检查支持
+-- LuaCATS type definitions
+-- Provides IDE autocomplete and type checking support
 
 ---@class WorktreeTmux.Config
----@field session_name string Tmux session 名称（默认 "worktrees"）
----@field worktree_base_dir string|fun():string Worktree 基础目录
----@field window_command? string Window 启动命令
----@field window_name_template string Window 命名模板
----@field sync_ignored_files boolean 是否同步 ignore 文件
----@field on_duplicate_window "ask"|"overwrite"|"skip" 重名 window 处理策略
----@field ui WorktreeTmux.UIConfig UI 配置
----@field fzf_opts WorktreeTmux.FzfConfig fzf-lua 配置
----@field notify WorktreeTmux.NotifyConfig 通知配置
----@field async WorktreeTmux.AsyncConfig 异步执行配置
----@field log WorktreeTmux.LogConfig 日志配置
+---@field session_name string Tmux session name (default "worktrees")
+---@field worktree_base_dir string|fun():string Worktree base directory
+---@field window_command? string Window startup command
+---@field window_name_template string Window naming template
+---@field sync_ignored_files boolean Whether to sync ignore files
+---@field on_duplicate_window "ask"|"overwrite"|"skip" Duplicate window handling strategy
+---@field ui WorktreeTmux.UIConfig UI config
+---@field fzf_opts WorktreeTmux.FzfConfig fzf-lua config
+---@field notify WorktreeTmux.NotifyConfig Notification config
+---@field async WorktreeTmux.AsyncConfig Async execution config
+---@field log WorktreeTmux.LogConfig Log config
 
 ---@class WorktreeTmux.UIConfig
----@field input WorktreeTmux.InputConfig 输入框配置
----@field confirm WorktreeTmux.ConfirmConfig 确认对话框配置
+---@field input WorktreeTmux.InputConfig Input config
+---@field confirm WorktreeTmux.ConfirmConfig Confirm dialog config
 
 ---@class WorktreeTmux.InputConfig
----@field border string 边框样式
----@field width number 宽度
----@field position string|table 位置
+---@field border string Border style
+---@field width number Width
+---@field position string|table Position
 
 ---@class WorktreeTmux.ConfirmConfig
----@field border string 边框样式
----@field width number 宽度
+---@field border string Border style
+---@field width number Width
 
 ---@class WorktreeTmux.FzfConfig
----@field prompt string 提示符
----@field winopts? table 窗口选项
+---@field prompt string Prompt
+---@field winopts? table Window options
 
 ---@class WorktreeTmux.NotifyConfig
----@field use_snacks boolean 是否使用 snacks.nvim
----@field timeout number 通知显示时间（毫秒）
+---@field use_snacks boolean Whether to use snacks.nvim
+---@field timeout number Notification display time (ms)
 
 ---@class WorktreeTmux.AsyncConfig
----@field show_progress boolean 是否显示进度通知
----@field rsync_timeout number rsync 超时时间（秒）
+---@field show_progress boolean Whether to show progress notification
+---@field rsync_timeout number Rsync timeout (seconds)
 
 ---@class WorktreeTmux.LogConfig
----@field level "trace"|"debug"|"info"|"warn"|"error"|"fatal" 日志级别
----@field use_console boolean 输出到控制台
----@field use_file boolean 输出到文件
----@field debug_mode boolean 启用调试模式
----@field debug_file? string 调试日志文件路径
----@field highlights boolean 是否高亮
+---@field level "trace"|"debug"|"info"|"warn"|"error"|"fatal" Log level
+---@field use_console boolean Output to console
+---@field use_file boolean Output to file
+---@field debug_mode boolean Enable debug mode
+---@field debug_file? string Debug log file path
+---@field highlights boolean Enable highlights
 
 ---@class WorktreeTmux.Worktree
----@field path string Worktree 路径
----@field branch? string 分支名
----@field bare? boolean 是否为裸仓库
+---@field path string Worktree path
+---@field branch? string Branch name
+---@field bare? boolean Whether it's a bare repository
 
 ---@class WorktreeTmux.TmuxWindow
----@field index number Window 索引
----@field name string Window 名称
----@field active boolean 是否为当前活动窗口
+---@field index number Window index
+---@field name string Window name
+---@field active boolean Whether it's the current active window
 
 ---@class WorktreeTmux.CreateWindowOpts
----@field session string Session 名称
----@field name string Window 名称
----@field cwd string 工作目录
----@field cmd? string 启动命令
+---@field session string Session name
+---@field name string Window name
+---@field cwd string Working directory
+---@field cmd? string Startup command
 
 ---@class WorktreeTmux.SyncResult
----@field created number 创建的 window 数量
----@field skipped number 跳过的数量
+---@field created number Number of created windows
+---@field skipped number Number of skipped
 
 ---@class WorktreeTmux.DebugContext
----@field request_id string 请求 ID
----@field start_time number 开始时间
----@field logs table 日志列表
----@field data_flow table 数据流记录
+---@field request_id string Request ID
+---@field start_time number Start time
+---@field logs table Log list
+---@field data_flow table Data flow records
 
 return {}

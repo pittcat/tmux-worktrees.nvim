@@ -1,26 +1,26 @@
--- 文件日志器
--- 生成 debug_log.txt 文件，完全符合调试日志规范
+-- File logger
+-- Generates debug_log.txt file, fully compliant with debug log specifications
 
 local M = {}
 
 local log_file_path = nil
 local log_file = nil
 
---- 初始化日志文件
----@param path? string 日志文件路径，默认为工作目录下的 debug_log.txt
+--- Initialize log file
+---@param path? string Log file path, defaults to debug_log.txt in working directory
 function M.init(path)
     log_file_path = path or (vim.fn.getcwd() .. "/debug_log.txt")
 
-    -- 删除旧文件，创建新文件
+    -- Delete old file, create new file
     os.remove(log_file_path)
 
     log_file = io.open(log_file_path, "w")
     if log_file then
-        log_file:setvbuf("line") -- 行缓冲，实时写入
+        log_file:setvbuf("line") -- Line buffer, real-time write
     end
 end
 
---- 获取毫秒级时间戳
+--- Get millisecond timestamp
 ---@return string
 local function get_timestamp()
     local time = vim.loop.hrtime() / 1e6
@@ -28,10 +28,10 @@ local function get_timestamp()
     return os.date("%Y-%m-%d %H:%M:%S") .. string.format(".%03d", ms)
 end
 
---- 写入日志
----@param level string 日志级别
----@param request_id? string 请求 ID
----@param message string 消息
+--- Write log
+---@param level string Log level
+---@param request_id? string Request ID
+---@param message string Message
 function M.write(level, request_id, message)
     if not log_file then
         return
@@ -50,12 +50,12 @@ function M.write(level, request_id, message)
     log_file:write(line)
 end
 
---- 写入环境信息（任务开始时调用）
+--- Write environment info (called at task start)
 function M.write_env_info()
     local version = vim.version()
 
     M.write("INFO", nil, string.format(
-        "环境: %s | 版本: %s | Neovim: %s.%s.%s | Lua: %s",
+        "Env: %s | Version: %s | Neovim: %s.%s.%s | Lua: %s",
         vim.env.WORKTREE_ENV or "dev",
         "v0.1.0",
         version.major,
@@ -64,11 +64,11 @@ function M.write_env_info()
         _VERSION
     ))
 
-    -- 尝试读取配置信息
+    -- Try to read config info
     local ok, config = pcall(require, "worktree-tmux.config")
     if ok and config.options then
         M.write("INFO", nil, string.format(
-            "配置: session=%s, sync=%s, async_progress=%s",
+            "Config: session=%s, sync=%s, async_progress=%s",
             config.options.session_name or "worktrees",
             tostring(config.options.sync_ignored_files),
             tostring(config.options.async and config.options.async.show_progress)
@@ -76,7 +76,7 @@ function M.write_env_info()
     end
 end
 
---- 写入调用栈
+--- Write call stack
 ---@param request_id? string
 ---@param depth number
 function M.write_call_stack(request_id, depth)
@@ -93,14 +93,14 @@ function M.write_call_stack(request_id, depth)
     end
 
     if #stack > 0 then
-        M.write("DEBUG", request_id, "调用栈:")
+        M.write("DEBUG", request_id, "Call stack:")
         for _, s in ipairs(stack) do
             M.write("DEBUG", request_id, s)
         end
     end
 end
 
---- 写入分隔线
+--- Write separator line
 ---@param request_id? string
 ---@param title? string
 function M.write_separator(request_id, title)
@@ -112,7 +112,7 @@ function M.write_separator(request_id, title)
     end
 end
 
---- 关闭日志文件
+--- Close log file
 function M.close()
     if log_file then
         log_file:close()
@@ -120,13 +120,13 @@ function M.close()
     end
 end
 
---- 获取日志文件路径
+--- Get log file path
 ---@return string|nil
 function M.get_path()
     return log_file_path
 end
 
---- 刷新缓冲区
+--- Flush buffer
 function M.flush()
     if log_file then
         log_file:flush()

@@ -1,10 +1,10 @@
--- 工具函数模块
+-- Utility functions module
 
 local M = {}
 
---- 格式化文件大小
----@param bytes number 字节数
----@return string 格式化后的字符串
+--- Format file size
+---@param bytes number Bytes
+---@return string Formatted string
 function M.format_size(bytes)
     if bytes < 1024 then
         return string.format("%d B", bytes)
@@ -17,9 +17,9 @@ function M.format_size(bytes)
     end
 end
 
---- 格式化持续时间
----@param ms number 毫秒数
----@return string 格式化后的字符串
+--- Format duration
+---@param ms number Milliseconds
+---@return string Formatted string
 function M.format_duration(ms)
     if ms < 1000 then
         return string.format("%d ms", ms)
@@ -32,21 +32,21 @@ function M.format_duration(ms)
     end
 end
 
---- 安全地转义 shell 字符串
+--- Safely escape shell string
 ---@param str string
 ---@return string
 function M.shell_escape(str)
     return vim.fn.shellescape(str)
 end
 
---- 展开路径中的 ~ 和环境变量
+--- Expand ~ and environment variables in path
 ---@param path string
 ---@return string
 function M.expand_path(path)
     return vim.fn.expand(path)
 end
 
---- 确保目录存在
+--- Ensure directory exists
 ---@param path string
 ---@return boolean success
 function M.ensure_dir(path)
@@ -56,28 +56,28 @@ function M.ensure_dir(path)
     return vim.fn.mkdir(path, "p") == 1
 end
 
---- 检查路径是否存在
+--- Check if path exists
 ---@param path string
 ---@return boolean
 function M.path_exists(path)
     return vim.fn.isdirectory(path) == 1 or vim.fn.filereadable(path) == 1
 end
 
---- 获取路径的父目录
+--- Get parent directory of path
 ---@param path string
 ---@return string
 function M.dirname(path)
     return vim.fn.fnamemodify(path, ":h")
 end
 
---- 获取路径的文件名
+--- Get filename from path
 ---@param path string
 ---@return string
 function M.basename(path)
     return vim.fn.fnamemodify(path, ":t")
 end
 
---- 合并路径
+--- Join path parts
 ---@param ... string
 ---@return string
 function M.join_path(...)
@@ -85,10 +85,10 @@ function M.join_path(...)
     return table.concat(parts, "/"):gsub("//+", "/")
 end
 
---- 防抖函数
----@param fn function 要执行的函数
----@param ms number 延迟毫秒数
----@return function 防抖后的函数
+--- Debounce function
+---@param fn function Function to execute
+---@param ms number Delay in milliseconds
+---@return function Debounced function
 function M.debounce(fn, ms)
     local timer = nil
     return function(...)
@@ -102,10 +102,10 @@ function M.debounce(fn, ms)
     end
 end
 
---- 节流函数
----@param fn function 要执行的函数
----@param ms number 节流间隔毫秒数
----@return function 节流后的函数
+--- Throttle function
+---@param fn function Function to execute
+---@param ms number Throttle interval in milliseconds
+---@return function Throttled function
 function M.throttle(fn, ms)
     local last_call = 0
     return function(...)
@@ -117,23 +117,23 @@ function M.throttle(fn, ms)
     end
 end
 
---- 深拷贝表
+--- Deep copy table
 ---@param tbl table
 ---@return table
 function M.deep_copy(tbl)
     return vim.deepcopy(tbl)
 end
 
---- 表是否为空
+--- Check if table is empty
 ---@param tbl table
 ---@return boolean
 function M.is_empty(tbl)
     return next(tbl) == nil
 end
 
---- 安全获取嵌套表值
+--- Safely get nested table value
 ---@param tbl table
----@param ... string 键路径
+---@param ... string Key path
 ---@return any
 function M.get_nested(tbl, ...)
     local keys = { ... }
@@ -149,7 +149,7 @@ function M.get_nested(tbl, ...)
     return value
 end
 
---- 生成唯一 ID
+--- Generate unique ID
 ---@return string
 function M.generate_id()
     return string.format("%x%x", os.time(), math.random(0, 0xFFFF))

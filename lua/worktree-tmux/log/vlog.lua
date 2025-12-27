@@ -1,16 +1,16 @@
--- 第一层：核心日志引擎
--- 基于 tjdevries/vlog.nvim 设计，提供基础日志功能
+-- Layer 1: Core logging engine
+-- Based on tjdevries/vlog.nvim design, provides basic logging functionality
 
 local M = {}
 
 ---@class VlogConfig
----@field plugin string 插件名称
----@field use_console boolean 输出到控制台
----@field use_file boolean 输出到文件
----@field highlights boolean 启用高亮
----@field level string 日志级别
----@field modes table 日志模式定义
----@field float_precision number 浮点数精度
+---@field plugin string Plugin name
+---@field use_console boolean Output to console
+---@field use_file boolean Output to file
+---@field highlights boolean Enable highlights
+---@field level string Log level
+---@field modes table Log mode definitions
+---@field float_precision number Float precision
 
 ---@type VlogConfig
 local default_config = {
@@ -30,13 +30,13 @@ local default_config = {
     float_precision = 0.01,
 }
 
---- 创建新的日志实例
----@param config? VlogConfig 日志配置
----@return table 日志实例
+--- Create new logger instance
+---@param config? VlogConfig Logger configuration
+---@return table Logger instance
 function M.new(config)
     config = vim.tbl_deep_extend("force", default_config, config or {})
 
-    -- 日志文件路径: ~/.local/share/nvim/worktree-tmux.nvim.log
+    -- Log file path: ~/.local/share/nvim/worktree-tmux.nvim.log
     local outfile = string.format(
         "%s/%s.log",
         vim.fn.stdpath("data"),
@@ -46,12 +46,12 @@ function M.new(config)
     local obj = {}
     local levels = {}
 
-    -- 构建级别映射
+    -- Build level mapping
     for i, v in ipairs(config.modes) do
         levels[v.name] = i
     end
 
-    --- 格式化值（处理表和特殊类型）
+    --- Format values (handle tables and special types)
     ---@param ... any
     ---@return string
     local function format_values(...)
@@ -62,7 +62,7 @@ function M.new(config)
             if type(v) == "table" then
                 table.insert(result, vim.inspect(v))
             elseif type(v) == "number" then
-                -- 处理浮点数精度
+                -- Handle float precision
                 if v ~= math.floor(v) then
                     table.insert(result, string.format("%.2f", v))
                 else
@@ -76,12 +76,12 @@ function M.new(config)
         return table.concat(result, " ")
     end
 
-    --- 在指定级别记录日志
-    ---@param level number 级别索引
-    ---@param level_config table 级别配置
-    ---@param ... any 日志参数
+    --- Log at specified level
+    ---@param level number Level index
+    ---@param level_config table Level config
+    ---@param ... any Log arguments
     local function log_at_level(level, level_config, ...)
-        -- 级别过滤
+        -- Level filter
         if level < levels[config.level] then
             return
         end
@@ -89,14 +89,14 @@ function M.new(config)
         local nameupper = level_config.name:upper()
         local msg = format_values(...)
 
-        -- 获取调用位置
+        -- Get caller location
         local info = debug.getinfo(3, "Sl")
         local lineinfo = ""
         if info then
             lineinfo = info.short_src .. ":" .. info.currentline
         end
 
-        -- 输出到控制台
+        -- Output to console
         if config.use_console then
             local console_str = string.format(
                 "[%-6s%s] %s: %s",
@@ -121,7 +121,7 @@ function M.new(config)
             end
         end
 
-        -- 输出到文件
+        -- Output to file
         if config.use_file then
             local fp = io.open(outfile, "a")
             if fp then
@@ -138,30 +138,30 @@ function M.new(config)
         end
     end
 
-    -- 创建各级别方法
+    -- Create level methods
     for i, mode in ipairs(config.modes) do
         obj[mode.name] = function(...)
             return log_at_level(i, mode, ...)
         end
     end
 
-    --- 格式化日志（带占位符）
-    ---@param level string 日志级别
-    ---@param fmt string 格式字符串
-    ---@param ... any 参数
+    --- Format log (with placeholders)
+    ---@param level string Log level
+    ---@param fmt string Format string
+    ---@param ... any Arguments
     function obj.fmt(level, fmt, ...)
         if obj[level] then
             obj[level](string.format(fmt, ...))
         end
     end
 
-    --- 获取日志文件路径
+    --- Get log file path
     ---@return string
     function obj.get_log_file()
         return outfile
     end
 
-    --- 清空日志文件
+    --- Clear log file
     function obj.clear()
         local fp = io.open(outfile, "w")
         if fp then

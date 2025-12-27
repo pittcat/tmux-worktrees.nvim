@@ -1,23 +1,23 @@
--- nui.nvim 确认对话框组件
+-- nui.nvim confirm dialog component
 
 local config = require("worktree-tmux.config")
 
 local M = {}
 
--- 检查 nui.nvim 是否可用
+-- Check if nui.nvim is available
 local has_nui, Menu = pcall(require, "nui.menu")
 local has_event, event = pcall(require, "nui.utils.autocmd")
 if has_event then
     event = event.event
 end
 
---- 显示确认对话框
+--- Show confirm dialog
 ---@param opts { title?: string, message?: string, on_yes: fun(), on_no?: fun() }
 function M.show(opts)
     if not has_nui then
-        -- 回退到 vim.fn.confirm
+        -- Fallback to vim.fn.confirm
         local choice = vim.fn.confirm(
-            opts.message or "确认操作？",
+            opts.message or "Confirm action?",
             "&Yes\n&No",
             2
         )
@@ -43,7 +43,7 @@ function M.show(opts)
         border = {
             style = ui_config.border or "rounded",
             text = {
-                top = opts.title or " 确认 ",
+                top = opts.title or " Confirm ",
                 top_align = "center",
             },
         },
@@ -52,8 +52,8 @@ function M.show(opts)
         },
     }, {
         lines = {
-            Menu.item("  是 (Yes)", { action = "yes" }),
-            Menu.item("  否 (No)", { action = "no" }),
+            Menu.item("  Yes ", { action = "yes" }),
+            Menu.item("  No ", { action = "no" }),
         },
         max_width = 40,
         keymap = {
@@ -85,31 +85,31 @@ function M.show(opts)
     end
 end
 
---- 询问用户是否覆盖已存在的 window
+--- Ask user whether to overwrite existing window
 ---@param window_name string
 ---@param callbacks { on_yes: fun(), on_no?: fun() }
 function M.confirm_overwrite(window_name, callbacks)
     M.show({
-        title = " ⚠️  Window 已存在 ",
-        message = string.format("'%s' 已存在，是否覆盖？", window_name),
+        title = " ⚠️  Window Exists ",
+        message = string.format("'%s' already exists, overwrite?", window_name),
         on_yes = callbacks.on_yes,
         on_no = callbacks.on_no,
     })
 end
 
---- 询问用户是否删除 worktree
+--- Ask user whether to delete worktree
 ---@param worktree_info table { path: string, branch: string, window_name?: string }
 ---@param callbacks { on_yes: fun(), on_no?: fun() }
 function M.confirm_delete(worktree_info, callbacks)
     local message = string.format(
-        "分支: %s\n路径: %s\n\n将同时删除:\n• Tmux Window: %s\n• 工作目录\n\n确认删除？",
+        "Branch: %s\nPath: %s\n\nWill also delete:\n• Tmux Window: %s\n• Working directory\n\nConfirm delete?",
         worktree_info.branch,
         worktree_info.path,
-        worktree_info.window_name or "无"
+        worktree_info.window_name or "none"
     )
 
     M.show({
-        title = " ⚠️  确认删除 ",
+        title = " ⚠️  Confirm Delete ",
         message = message,
         on_yes = callbacks.on_yes,
         on_no = callbacks.on_no,
