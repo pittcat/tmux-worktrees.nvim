@@ -5,6 +5,33 @@ local log = require("worktree-tmux.log.logger")
 
 local M = {}
 
+--- 安全地格式化数据用于日志输出
+---@param data any 要格式化的数据
+---@param max_length? number 最大长度（默认200）
+---@return string
+local function safe_inspect(data, max_length)
+    max_length = max_length or 200
+    if data == nil then
+        return "nil"
+    end
+
+    local inspected = vim.inspect(data, {
+        newline = "",
+        indent = "",
+        depth = 3,  -- 限制深度避免过深嵌套
+    })
+
+    -- 限制长度
+    if #inspected > max_length then
+        inspected = inspected:sub(1, max_length) .. "... (截断)"
+    end
+
+    -- 转义引号避免 echomsg 错误
+    inspected = inspected:gsub('"', "'")
+
+    return inspected
+end
+
 -- 调试上下文管理
 local debug_contexts = {}
 local current_context = nil
@@ -129,7 +156,7 @@ function M.fn_call(fn_name, ...)
 
     for _, a in ipairs(args) do
         if type(a) == "table" then
-            table.insert(args_str, vim.inspect(a))
+            table.insert(args_str, safe_inspect(a, 100))
         else
             table.insert(args_str, tostring(a))
         end
@@ -152,7 +179,7 @@ function M.fn_return(fn_name, ...)
 
     for _, r in ipairs(returns) do
         if type(r) == "table" then
-            table.insert(ret_str, vim.inspect(r))
+            table.insert(ret_str, safe_inspect(r, 100))
         else
             table.insert(ret_str, tostring(r))
         end
@@ -207,8 +234,11 @@ end
 ---@param name string 检查点名称
 ---@param data? table 额外数据
 function M.checkpoint(name, data)
-    local data_str = data and string.format(" | 数据: %s", vim.inspect(data)) or ""
-    M.log_raw("INFO", string.format("✓ 检查点: %s%s", name, data_str))
+    if data then
+        M.log_raw("INFO", string.format("✓ 检查点: %s | 数据: %s", name, safe_inspect(data)))
+    else
+        M.log_raw("INFO", string.format("✓ 检查点: %s", name))
+    end
 end
 
 --- 函数装饰器：自动记录调用和返回
@@ -263,23 +293,23 @@ end
 
 -- 导出快捷方法
 function M.trace(msg, data)
-    log.trace(data and string.format("%s: %s", msg, vim.inspect(data)) or msg)
+    log.trace(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end
 
 function M.debug(msg, data)
-    log.debug(data and string.format("%s: %s", msg, vim.inspect(data)) or msg)
+    log.debug(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end
 
 function M.info(msg, data)
-    log.info(data and string.format("%s: %s", msg, vim.inspect(data)) or msg)
+    log.info(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end
 
 function M.warn(msg, data)
-    log.warn(data and string.format("%s: %s", msg, vim.inspect(data)) or msg)
+    log.warn(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end
 
 function M.error(msg, data)
-    log.error(data and string.format("%s: %s", msg, vim.inspect(data)) or msg)
+    log.error(data and string.format("%s: %s", msg, safe_inspect(data, 200)) or msg)
 end
 
 return M
