@@ -430,7 +430,11 @@ function M.sync_worktrees()
 
     -- 为每个 worktree 检查是否有对应的 window
     for _, wt in ipairs(worktrees) do
-        if not wt.bare and wt.branch then
+        -- 跳过 main/master 分支（这些分支通常在主窗口中工作）
+        if wt.branch == "main" or wt.branch == "master" then
+            log.debug("跳过 main/master 分支:", wt.branch)
+            -- 不计入任何计数器（notify 中显示的数量不包含这些）
+        elseif not wt.bare and wt.branch then
             local window_name = config.format_window_name(repo_name, wt.branch)
 
             if not window_names[window_name] then

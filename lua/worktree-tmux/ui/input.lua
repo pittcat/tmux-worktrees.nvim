@@ -36,6 +36,9 @@ function M.branch_input(opts)
         size = {
             width = ui_config.width or 60,
         },
+        relative = {
+            type = "editor",
+        },
         border = {
             style = ui_config.border or "rounded",
             text = {
@@ -126,6 +129,9 @@ function M.base_branch_input(opts)
         size = {
             width = ui_config.width or 60,
             height = math.min(#lines, 10),
+        },
+        relative = {
+            type = "editor",
         },
         border = {
             style = ui_config.border or "rounded",

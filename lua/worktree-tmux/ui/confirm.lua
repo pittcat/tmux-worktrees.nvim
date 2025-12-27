@@ -37,6 +37,9 @@ function M.show(opts)
             width = ui_config.width or 40,
             height = 2,
         },
+        relative = {
+            type = "editor",
+        },
         border = {
             style = ui_config.border or "rounded",
             text = {
