@@ -1,0 +1,46 @@
+# Logs
+*.log
+debug_log.txt
+logs/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.netrwhist
+Session.vim
+
+# Lua/LuaRocks
+*.rock
+lua_modules/
+.luarocks/
+
+# Testing
+luacov.stats.out
+luacov.report.out
+coverage/
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+
+# Neovim
+.nvim.lua
+.nvimrc
+.exrc
+
+# Temp files
+*.tmp
+*.bak
+*.orig
+
+# Serena MCP
+.serena/

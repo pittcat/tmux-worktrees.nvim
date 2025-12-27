@@ -1,0 +1,169 @@
+*worktree-tmux.txt*  Git Worktree + Tmux Window automation
+
+================================================================================
+CONTENTS                                              *worktree-tmux-contents*
+
+    1. Introduction .......................... |worktree-tmux-introduction|
+    2. Requirements .......................... |worktree-tmux-requirements|
+    3. Installation .......................... |worktree-tmux-installation|
+    4. Configuration ......................... |worktree-tmux-configuration|
+    5. Commands .............................. |worktree-tmux-commands|
+    6. API ................................... |worktree-tmux-api|
+    7. Health ................................ |worktree-tmux-health|
+
+================================================================================
+INTRODUCTION                                      *worktree-tmux-introduction*
+
+worktree-tmux.nvim is a Neovim plugin that automates the management of Git
+worktrees and Tmux windows. When you create a git worktree, it automatically
+creates a corresponding tmux window in a dedicated session.
+
+Features:
+- One-click worktree + window creation
+- Unified management in a dedicated tmux session
+- Fast navigation with fzf-lua
+- Automatic file synchronization (including .gitignore files)
+- Automatic cleanup on deletion
+
+================================================================================
+REQUIREMENTS                                      *worktree-tmux-requirements*
+
+Required:
+- Neovim >= 0.9.0
+- tmux
+- git
+- plenary.nvim
+- nui.nvim
+
+Optional:
+- fzf-lua (for fuzzy finding)
+- snacks.nvim (for better notifications)
+- rsync (for file synchronization)
+
+================================================================================
+INSTALLATION                                      *worktree-tmux-installation*
+
+Using lazy.nvim: >lua
+    {
+      "yourusername/worktree-tmux.nvim",
+      dependencies = {
+        "nvim-lua/plenary.nvim",
+        "MunifTanjim/nui.nvim",
+        "ibhagwan/fzf-lua",        -- optional
+        "folke/snacks.nvim",       -- optional
+      },
+      config = function()
+        require("worktree-tmux").setup({})
+      end,
+    }
+<
+
+================================================================================
+CONFIGURATION                                    *worktree-tmux-configuration*
+
+Default configuration: >lua
+    require("worktree-tmux").setup({
+      session_name = "worktrees",
+      worktree_base_dir = "~/worktrees",
+      window_command = nil,
+      window_name_template = "wt-{repo}-{branch}",
+      sync_ignored_files = true,
+      on_duplicate_window = "ask",
+      ui = {
+        input = { border = "rounded", width = 60 },
+        confirm = { border = "rounded", width = 40 },
+      },
+      fzf_opts = {
+        prompt = "Worktree Jump> ",
+      },
+      log = {
+        level = "info",
+      },
+    })
+<
+
+Options:
+
+*worktree-tmux.session_name*
+    Name of the tmux session for worktrees.
+    Default: "worktrees"
+
+*worktree-tmux.worktree_base_dir*
+    Base directory for worktrees. Can be a string or function.
+    Default: "~/worktrees"
+
+*worktree-tmux.window_command*
+    Command to run in new windows. nil for empty shell.
+    Default: nil
+
+*worktree-tmux.window_name_template*
+    Template for window names. Placeholders: {repo}, {branch}, {base}
+    Default: "wt-{repo}-{branch}"
+
+*worktree-tmux.sync_ignored_files*
+    Whether to sync .gitignore files to new worktrees.
+    Default: true
+
+*worktree-tmux.on_duplicate_window*
+    How to handle existing windows: "ask", "overwrite", "skip"
+    Default: "ask"
+
+================================================================================
+COMMANDS                                              *worktree-tmux-commands*
+
+*:WorktreeCreate* [branch] [base]
+    Create a new worktree and tmux window.
+    If branch is not provided, shows an input dialog.
+
+*:WorktreeJump*
+    Show fzf-lua picker to jump to a worktree window.
+
+*:WorktreeDelete* [path]
+    Delete a worktree and its tmux window.
+    If path is not provided, shows a selection dialog.
+
+*:WorktreeSync*
+    Synchronize worktrees and tmux windows.
+    Creates missing windows for existing worktrees.
+
+*:WorktreeList*
+    List all worktrees and their window status.
+
+================================================================================
+API                                                        *worktree-tmux-api*
+
+*worktree-tmux.setup({config})*
+    Initialize the plugin with configuration.
+
+*worktree-tmux.create({branch}, {base})*
+    Create a worktree and window programmatically.
+
+*worktree-tmux.jump()*
+    Show the worktree picker.
+
+*worktree-tmux.delete({path})*
+    Delete a worktree and window.
+
+*worktree-tmux.sync()*
+    Synchronize worktrees and windows.
+
+*worktree-tmux.list()*
+    List all worktrees.
+
+================================================================================
+HEALTH                                                  *worktree-tmux-health*
+
+Run health check: >vim
+    :checkhealth worktree-tmux
+<
+
+This checks:
+- Neovim version
+- Tmux environment
+- Git availability
+- Required dependencies
+- Optional dependencies
+- Configuration validity
+
+================================================================================
+vim:tw=78:ts=8:ft=help:norl:

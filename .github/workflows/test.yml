@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        neovim-version: ['stable', 'nightly']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.neovim-version }}
+
+      - name: Install tmux
+        run: sudo apt-get install -y tmux
+
+      - name: Install Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+
+      - name: Install LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install dependencies
+        run: |
+          luarocks install busted
+          luarocks install nlua
+
+      - name: Clone plenary.nvim
+        run: |
+          mkdir -p ~/.local/share/nvim/lazy
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ~/.local/share/nvim/lazy/plenary.nvim
+
+      - name: Clone nui.nvim
+        run: |
+          git clone --depth 1 https://github.com/MunifTanjim/nui.nvim ~/.local/share/nvim/lazy/nui.nvim
+
+      - name: Run tests
+        run: |
+          nvim --headless -u spec/minimal_init.lua -c "PlenaryBustedDirectory spec/ {minimal_init = 'spec/minimal_init.lua'}"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint with luacheck
+        uses: lunarmodules/luacheck@v1
+        with:
+          args: lua/ --globals vim --no-max-line-length
