@@ -137,10 +137,108 @@ local function sync_pattern(source_base, target_base, pattern)
     return true
 end
 
---- 同步 ignored 文件到新 worktree
+--- 同步 ignored 文件到新 worktree（异步版本）
 ---@param source string 源目录（当前仓库）
 ---@param target string 目标目录（新 worktree）
----@param opts? { patterns?: string[], on_progress?: fun(pattern: string, current: number, total: number) }
+---@param opts? { patterns?: string[], on_progress?: fun(pattern: string, current: number, total: number), on_sync_done?: fun(sync_ok: boolean, synced_count: number) }
+function M.sync_ignored_files_async(source, target, opts)
+    opts = opts or {}
+
+    -- 获取 patterns
+    local patterns = opts.patterns
+    if not patterns then
+        local gitignore_path = source .. "/.gitignore"
+        patterns = M.parse_gitignore(gitignore_path)
+    end
+
+    if #patterns == 0 then
+        log.info("没有需要同步的文件")
+        if opts.on_sync_done then
+            opts.on_sync_done(true, 0)
+        end
+        return
+    end
+
+    log.info("开始同步 ignore 文件，共", #patterns, "个 patterns")
+
+    local synced = 0
+    local failed = 0
+    local async = require("worktree-tmux.async")
+    local remaining = #patterns
+
+    local function process_next(index)
+        if index > #patterns then
+            -- 全部完成
+            local success = failed == 0
+            if failed > 0 then
+                log.warn("同步完成，成功:", synced, "失败:", failed)
+            else
+                log.info("同步完成，共", synced, "个 patterns")
+            end
+            if opts.on_sync_done then
+                opts.on_sync_done(success, synced)
+            end
+            return
+        end
+
+        local pattern = patterns[index]
+        if opts.on_progress then
+            opts.on_progress(pattern, index, #patterns)
+        end
+
+        local clean_pattern = pattern:gsub("^/", "")
+        local source_path = source .. "/" .. clean_pattern
+        local target_path = target .. "/" .. clean_pattern
+
+        local stat = vim.loop.fs_stat(source_path)
+        if not stat then
+            -- 源不存在，跳过
+            process_next(index + 1)
+            return
+        end
+
+        -- 构建 rsync 命令
+        local is_dir = stat.type == "directory"
+        local rsync_cmd
+        if is_dir then
+            rsync_cmd = string.format(
+                "rsync -a --exclude='.git' %s/ %s/",
+                vim.fn.shellescape(source_path),
+                vim.fn.shellescape(target_path)
+            )
+        else
+            rsync_cmd = string.format(
+                "rsync -a %s %s",
+                vim.fn.shellescape(source_path),
+                vim.fn.shellescape(target_path)
+            )
+        end
+
+        log.debug("执行 rsync:", rsync_cmd)
+
+        -- 异步执行 rsync
+        async.run({
+            cmd = "sh",
+            args = { "-c", rsync_cmd },
+            on_success = function()
+                synced = synced + 1
+                process_next(index + 1)
+            end,
+            on_error = function()
+                failed = failed + 1
+                log.warn("同步失败:", pattern)
+                process_next(index + 1)
+            end,
+        })
+    end
+
+    process_next(1)
+end
+
+--- 同步 ignored 文件到新 worktree（同步版本，保留兼容性）
+---@param source string 源目录（当前仓库）
+---@param target string 目标目录（新 worktree）
+---@param opts? { patterns?: string[], on_progress?: fun(pattern: string, current: number, total: number), on_sync_done?: fun(sync_ok: boolean, synced_count: number) }
 ---@return boolean success
 ---@return number synced_count
 function M.sync_ignored_files(source, target, opts)
@@ -155,6 +253,9 @@ function M.sync_ignored_files(source, target, opts)
 
     if #patterns == 0 then
         log.info("没有需要同步的文件")
+        if opts.on_sync_done then
+            opts.on_sync_done(true, 0)
+        end
         return true, 0
     end
 
@@ -181,6 +282,10 @@ function M.sync_ignored_files(source, target, opts)
         log.warn("同步完成，成功:", synced, "失败:", failed)
     else
         log.info("同步完成，共", synced, "个 patterns")
+    end
+
+    if opts.on_sync_done then
+        opts.on_sync_done(failed == 0, synced)
     end
 
     return failed == 0, synced

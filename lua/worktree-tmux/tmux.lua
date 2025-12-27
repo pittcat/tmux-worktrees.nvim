@@ -63,7 +63,7 @@ function M.create_session(name, opts)
     return true
 end
 
---- 检查 window 是否存在
+--- 检查 window 是否是否存在
 ---@param session string session 名称
 ---@param window string window 名称
 ---@return boolean

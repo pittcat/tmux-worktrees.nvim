@@ -95,12 +95,19 @@ function M.confirm_overwrite(window_name, callbacks)
 end
 
 --- 询问用户是否删除 worktree
----@param worktree_path string
+---@param worktree_info table { path: string, branch: string, window_name?: string }
 ---@param callbacks { on_yes: fun(), on_no?: fun() }
-function M.confirm_delete(worktree_path, callbacks)
+function M.confirm_delete(worktree_info, callbacks)
+    local message = string.format(
+        "分支: %s\n路径: %s\n\n将同时删除:\n• Tmux Window: %s\n• 工作目录\n\n确认删除？",
+        worktree_info.branch,
+        worktree_info.path,
+        worktree_info.window_name or "无"
+    )
+
     M.show({
         title = " ⚠️  确认删除 ",
-        message = string.format("确定删除 worktree '%s'？", worktree_path),
+        message = message,
         on_yes = callbacks.on_yes,
         on_no = callbacks.on_no,
     })

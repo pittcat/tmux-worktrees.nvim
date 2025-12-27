@@ -25,6 +25,9 @@ local defaults = {
     -- 重名 window 处理策略
     on_duplicate_window = "ask",
 
+    -- 是否异步执行（后台运行，不阻塞 Neovim）
+    async = true,
+
     -- UI 配置
     ui = {
         input = {
@@ -53,12 +56,6 @@ local defaults = {
     notify = {
         use_snacks = true,
         timeout = 3000,
-    },
-
-    -- 异步执行配置
-    async = {
-        show_progress = true,
-        rsync_timeout = 60,
     },
 
     -- 日志配置

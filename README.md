@@ -72,6 +72,9 @@ require("worktree-tmux").setup({
   -- 重名 window 处理："ask" | "overwrite" | "skip"
   on_duplicate_window = "ask",
 
+  -- 是否异步执行（后台运行，不阻塞当前 Neovim 操作）
+  async = true,
+
   -- UI 配置
   ui = {
     input = {

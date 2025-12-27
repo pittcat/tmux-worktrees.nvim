@@ -45,34 +45,138 @@ end
 --- 获取所有 worktrees
 ---@return WorktreeTmux.Worktree[]
 function M.get_worktree_list()
+    -- 创建调试上下文
+    local dbg = log.get_debug()
+    local request_id = dbg.begin("git.get_worktree_list")
+
+    -- 记录环境和版本信息
+    local version = vim.version()
+    dbg.log_raw("INFO", string.format(
+        "环境: %s | 版本: v0.1.0 | Neovim: %s.%s.%s | RequestID: %s",
+        vim.env.WORKTREE_ENV or "dev",
+        version.major,
+        version.minor,
+        version.patch,
+        request_id
+    ))
+
+    -- 记录调用栈
+    local call_stack = {}
+    for i = 3, 7 do
+        local info = debug.getinfo(i, "nSl")
+        if not info then break end
+        table.insert(call_stack, string.format("%s() line %d", info.name or "anonymous", info.currentline or 0))
+    end
+    dbg.log_raw("DEBUG", string.format("调用栈: %s", table.concat(call_stack, " → ")))
+
+    -- 执行 git 命令
+    dbg.log_raw("INFO", "执行 git worktree list --porcelain 命令")
     local output = vim.fn.system("git worktree list --porcelain 2>/dev/null")
+
+    -- 记录命令执行结果
     if vim.v.shell_error ~= 0 then
+        dbg.log_raw("ERROR", string.format("git 命令执行失败，错误码: %d", vim.v.shell_error))
+        dbg.log_raw("ERROR", string.format("输出: %s", output))
+        dbg.done()
         return {}
     end
 
+    -- 记录原始输出（转义特殊字符避免 vim 错误）
+    dbg.log_raw("INFO", string.format("原始输出长度: %d 字符", #output))
+    -- 只显示前200个字符，避免输出过长
+    local preview = output:gsub("\n", "\\n"):sub(1, 200)
+    if #output > 200 then
+        preview = preview .. "... (截断)"
+    end
+    dbg.log_raw("DEBUG", string.format("原始输出内容（前200字符）: %s", preview))
+
+    -- 解析输出
+    dbg.log_raw("INFO", "开始解析 worktree 列表")
     local worktrees = {}
     local current = {}
+    local line_count = 0
 
     for line in output:gmatch("[^\r\n]+") do
+        line_count = line_count + 1
+        dbg.log_raw("TRACE", string.format("解析第 %d 行: %s", line_count, line))
+
         if line:match("^worktree ") then
-            current.path = line:match("^worktree (.+)$")
+            local path = line:match("^worktree (.+)$")
+            -- 排除 git 内部管理的 worktree（.git/.git/worktrees/）
+            if not path:match("/%.git/%.git/worktrees/") then
+                -- 如果当前已经有完整的 worktree，先保存它
+                if current.path and current.branch then
+                    dbg.log_raw("DEBUG", string.format("保存前一个 worktree: %s", current.path))
+                    table.insert(worktrees, current)
+                    dbg.log_raw("DEBUG", string.format("保存后 worktrees 数量: %d", #worktrees))
+                end
+                -- 开始新的 worktree
+                dbg.log_raw("DEBUG", string.format("找到 worktree 路径: %s", path))
+                current = { path = path }  -- 新建 table
+            else
+                dbg.log_raw("DEBUG", "跳过内部 worktree 路径")
+                current = {} -- 跳过内部 worktree
+            end
         elseif line:match("^branch ") then
-            current.branch = line:match("^branch refs/heads/(.+)$")
+            local branch = line:match("^branch refs/heads/(.+)$")
+            dbg.log_raw("DEBUG", string.format("找到分支: %s", branch))
+            current.branch = branch
         elseif line:match("^bare") then
+            dbg.log_raw("DEBUG", "标记为 bare")
             current.bare = true
         elseif line:match("^detached") then
+            dbg.log_raw("DEBUG", "标记为 detached")
             current.detached = true
-        elseif line == "" and current.path then
+        elseif line == "" and current.path and current.branch then
+            local current_info = string.format("path=%s, branch=%s, bare=%s",
+                current.path or "nil", current.branch or "nil", tostring(current.bare or false))
+            dbg.log_raw("DEBUG", string.format("遇到空行，当前 worktree: %s", current_info))
             table.insert(worktrees, current)
+            dbg.log_raw("DEBUG", string.format("添加后 worktrees 数量: %d", #worktrees))
+            for i, wt in ipairs(worktrees) do
+                dbg.log_raw("DEBUG", string.format("  Worktrees[%d]: %s", i, wt.path))
+            end
             current = {}
+            dbg.log_raw("DEBUG", "已重置 current")
         end
     end
 
     -- 处理最后一个条目
+    local current_info = current.path and string.format("path=%s, branch=%s, bare=%s",
+        current.path or "nil", current.branch or "nil", tostring(current.bare or false)) or "空"
+    dbg.log_raw("DEBUG", string.format("循环结束，current: %s", current_info))
     if current.path then
+        dbg.log_raw("DEBUG", string.format("完成最后一个 worktree 解析: %s", current_info))
         table.insert(worktrees, current)
+        dbg.log_raw("DEBUG", string.format("最终 worktrees 数量: %d", #worktrees))
+        for i, wt in ipairs(worktrees) do
+            dbg.log_raw("DEBUG", string.format("  Worktrees[%d]: %s", i, wt.path))
+        end
     end
 
+    -- 记录数据流
+    dbg.log_raw("INFO", string.format(
+        "数据流: git worktree list --porcelain → 解析 → %d 个 worktrees",
+        #worktrees
+    ))
+
+    -- 记录最终结果
+    if #worktrees > 0 then
+        for i, wt in ipairs(worktrees) do
+            dbg.log_raw("INFO", string.format(
+                "Worktree[%d]: 路径=%s, 分支=%s, bare=%s, detached=%s",
+                i,
+                wt.path or "nil",
+                wt.branch or "nil",
+                tostring(wt.bare or false),
+                tostring(wt.detached or false)
+            ))
+        end
+    else
+        dbg.log_raw("WARN", "没有找到任何 worktrees")
+    end
+
+    dbg.done()
     return worktrees
 end
 
